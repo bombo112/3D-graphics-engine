@@ -192,9 +192,9 @@ def load_model(filename, location = [0, 0, 0], rotation = [0, 0, 0], scale = [0,
     triangle = []
     triangle_list = []
 
-
     with open(filename, "r") as fil:
         lines = fil.readlines()
+
         for linje in lines:
             linje = linje.rstrip("\n")
             linje_elementer = linje.split(" ")
@@ -215,7 +215,7 @@ def load_model(filename, location = [0, 0, 0], rotation = [0, 0, 0], scale = [0,
                 vektor2[0] = int(vektor2[0])
                 vektor3[0] = int(vektor3[0])
 
-                triangle = [model_vertex_list[vektor1[0]], model_vertex_list[vektor2[0]], model_vertex_list[vektor3[0]]]
+                triangle = [model_vertex_list[vektor1[0]-1], model_vertex_list[vektor2[0]-1], model_vertex_list[vektor3[0]-1]]
                 
                 triangle_list.append(triangle)
 
@@ -229,6 +229,26 @@ def load_model(filename, location = [0, 0, 0], rotation = [0, 0, 0], scale = [0,
     asset_liste.append(new_object)  #legger til objeketet til listen med objekter
     print(f"Finished loading model: {filename}")
     return len(asset_liste)     #returnerer objektets liste adresse
+
+
+def modify_object(id, location = [0, 0, 0], rotation = [0, 0, 0], scale = [0, 0, 0], color = [255, 255, 255]):
+    object_index = find_index(asset_liste, id)
+    if object_index == "object does not exist":
+        return "object does not exist"
+    
+    asset_liste[object_index][1] = location
+    asset_liste[object_index][2] = rotation
+    asset_liste[object_index][3] = scale
+    asset_liste[object_index][4] = color
+    return "success"
+
+
+
+def find_index(liste, key):
+    for i in range(len(liste)):
+        if liste[i][5] == key:
+            return i
+    return("object does not exist")
 
 
 cube = [
@@ -253,8 +273,14 @@ cube = [
 ]
 
 
-asset_liste.append([cube, [0, 2, 3], [0, 0, 0]])      #testcube
-#load_model("teapot.obj")
+asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 0])      #testcube
+asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 1])      #testcube
+asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 2])      #testcube
+asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 3])      #testcube
+
+
+load_model("plane.obj", id=40)
+#load_model("teapot.obj", location=[0, 0, 15], rotation=[0, 0, 0], id = 20)
 #load_model("nymph1.obj")
 #load_model("Soap_holder.obj")
 
@@ -264,18 +290,22 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             quit()
-    clock.tick(50)
+    clock.tick(100)
     pygame.display.update()
     window.fill((0, 0, 0))
     
     startime = time.time()
     render_qew = []
-
-    
     offset += 0.01
+    modify_object(0, [math.cos(offset)*3, -3, 5], [math.sin(offset), 0, offset])
+    modify_object(1, [math.sin(offset)*3, 0, 5], [math.tan(offset), 2, 0])
+    modify_object(2, [3, math.cos(offset)*-3, 5], [math.sin(offset), offset, offset/2])
+    modify_object(3, [math.cos(offset/3)*3, -3, 5], [math.sin(offset), 4, 2])
+    modify_object(40, [math.cos(offset/3)*200, -3, 300], [-math.pi/4+math.sin(offset), math.pi /2, 0])
+    #modify_object(20, location=[0, -5, 15], rotation=[0,  math.sin(offset*3), 0])
+
     for objekt in asset_liste:
         for triangles in objekt[0]:
-
             rotated_triangle = rotate_multiaxis(triangles, angle_x_axis=objekt[2][0], angle_y_axis = objekt[2][1], angle_z_axis=objekt[2][2])     #rotate the cube
 
             offseted_triangles2 = translate_triangle(rotated_triangle, x=objekt[1][0], y=objekt[1][1], z=objekt[1][2])                   #move cube to location in space
