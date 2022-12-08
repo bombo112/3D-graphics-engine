@@ -243,7 +243,6 @@ def modify_object(id, location = [0, 0, 0], rotation = [0, 0, 0], scale = [0, 0,
     return "success"
 
 
-
 def find_index(liste, key):
     for i in range(len(liste)):
         if liste[i][5] == key:
@@ -273,36 +272,11 @@ cube = [
 ]
 
 
-asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 0])      #testcube
-asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 1])      #testcube
-asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 2])      #testcube
-asset_liste.append([cube, [0, 2, 3], [0, 0, 0], [0, 0, 0], [255, 255, 255], 3])      #testcube
-
-
-load_model("plane.obj", id=40)
-#load_model("teapot.obj", location=[0, 0, 15], rotation=[0, 0, 0], id = 20)
-#load_model("nymph1.obj")
-#load_model("Soap_holder.obj")
-
-
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            quit()
-    clock.tick(100)
-    pygame.display.update()
+def draw():
     window.fill((0, 0, 0))
     
     startime = time.time()
     render_qew = []
-    offset += 0.01
-    modify_object(0, [math.cos(offset)*3, -3, 5], [math.sin(offset), 0, offset])
-    modify_object(1, [math.sin(offset)*3, 0, 5], [math.tan(offset), 2, 0])
-    modify_object(2, [3, math.cos(offset)*-3, 5], [math.sin(offset), offset, offset/2])
-    modify_object(3, [math.cos(offset/3)*3, -3, 5], [math.sin(offset), 4, 2])
-    modify_object(40, [math.cos(offset/3)*200, -3, 300], [-math.pi/4+math.sin(offset), math.pi /2, 0])
-    #modify_object(20, location=[0, -5, 15], rotation=[0,  math.sin(offset*3), 0])
 
     for objekt in asset_liste:
         for triangles in objekt[0]:
@@ -343,3 +317,4 @@ while True:
     stoptime = time.time()
     print(f"fps: {1/(stoptime-startime+0.0000000000000000000000001)}")
     print(f"frametime: {stoptime-startime}")
+    pygame.display.update()
