@@ -2,22 +2,18 @@ import math
 import pygame
 import time
 
-SCREEN_HEIGHT = 1080
-SCREEN_WIDTH =  (SCREEN_HEIGHT * (16/9))
+screen_height = 1080
+screen_width =  (screen_height * (16/9))
 
-SCREENSIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
-window = pygame.display.set_mode(SCREENSIZE)
-clock = pygame.time.Clock()
-
+screensize = (screen_width, screen_height)
+window = pygame.display.set_mode(screensize)
 loop = range(0, 3, 1)   #used to loop through x, y and z or the 3 vertexes in a triangle.
-offset = 2
-
 
 #projection data
 Zfar = 1000
 Znear = 0.1
 fov = 90
-aspect_ratio = SCREEN_HEIGHT/SCREEN_WIDTH
+aspect_ratio = screen_height/screen_width
 fov_rad = 1/math.tan(math.radians(fov *0.5))
 
 #camera and sun data
@@ -28,6 +24,7 @@ sun_direction = [1,3, 0]
 #sun and shadow color in rgb
 sun_color = [255, 255, 150]
 shadow_color = [10, 10, 20]
+shade_fallof = 1
 
 
 def project_triangle(triangle):
@@ -62,8 +59,8 @@ def translate_triangle(triangle, x=0, y=0, z=0):
 def screen_normalize(triangle = [[0, 0], [0, 0], [0, 0]]):
     output = [[0, 0], [0, 0], [0, 0]]
     for i in loop:
-        output[i][0] = triangle[i][0] * SCREEN_WIDTH/2 + SCREEN_WIDTH/2
-        output[i][1] = triangle[i][1] * SCREEN_HEIGHT/2 + SCREEN_HEIGHT/2
+        output[i][0] = triangle[i][0] * screen_width/2 + screen_width/2
+        output[i][1] = triangle[i][1] * screen_height/2 + screen_height/2
     return output
 
 
@@ -152,24 +149,23 @@ def normal_finder_vector(vector1, vector2):
 
     return normal
 
-def triangle_shade(triangle, normalvector, light, max_color, min_color):
+def triangle_shade(triangle, normalvector, light, max_color, min_color, object_color = [255, 255, 255]):
     color = [0, 0, 0]
     vector_length = math.sqrt(triangle[0][0]**2 + triangle[0][1]**2 + triangle[0][2]**2)
     light_length = math.sqrt(light[0]**2 + light[1]**2 + light[2]**2)
-    lightfaktor =(normalvector[0] *(triangle[0][0]/vector_length - light[0]/light_length) + 
+    raw_lightfaktor =(normalvector[0] *(triangle[0][0]/vector_length - light[0]/light_length) + 
                   normalvector[1] *(triangle[0][1]/vector_length - light[1]/light_length) + 
                   normalvector[2] *(triangle[0][2]/vector_length - light[2]/light_length))
-    lightfaktor += 2
-    #print(lightfaktor)
-    if lightfaktor < 2:
-        lightfaktor = lightfaktor-0.5
+    linear_lightfaktor = (raw_lightfaktor + 2) /4
 
-    if lightfaktor < 0:
-        lightfaktor = 0
+    lightfactor = (10**(linear_lightfaktor-1))*linear_lightfaktor**shade_fallof
 
     for i in loop:
-        color[i] = translate_value(lightfaktor, 0, 4, min_color[i], max_color[i])
-
+        color[i] = translate_value(lightfactor, 0, 1, min_color[i], max_color[i])
+        color[i] *= (object_color[i]/255)
+        if color[i] > 255:
+            color[i] = 255
+    
     return (color[0], color[1], color[2])
 
 
@@ -231,7 +227,7 @@ def load_model(filename, location = [0, 0, 0], rotation = [0, 0, 0], scale = [0,
     return len(asset_liste)     #returnerer objektets liste adresse
 
 
-def modify_object(id, location = [0, 0, 0], rotation = [0, 0, 0], scale = [0, 0, 0], color = [255, 255, 255]):
+def modify_object(id, location = [0, 0, 0], rotation = [0, 0, 0], scale = [1, 1, 1], color = [255, 255, 255]):
     object_index = find_index(asset_liste, id)
     if object_index == "object does not exist":
         return "object does not exist"
@@ -248,6 +244,19 @@ def find_index(liste, key):
         if liste[i][5] == key:
             return i
     return("object does not exist")
+
+
+def remove_object(id):
+    object_index = find_index(id)
+    asset_liste.pop(object_index)
+
+def scale_triangle(trigon, x=1, y=1, z=1):
+    output = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    for i in loop:
+        output[i][0] = x * trigon[i][0]
+        output[i][1] = y * trigon[i][1]
+        output[i][2] = z * trigon[i][2]
+    return output
 
 
 cube = [
@@ -280,7 +289,10 @@ def draw():
 
     for objekt in asset_liste:
         for triangles in objekt[0]:
-            rotated_triangle = rotate_multiaxis(triangles, angle_x_axis=objekt[2][0], angle_y_axis = objekt[2][1], angle_z_axis=objekt[2][2])     #rotate the cube
+
+            scaled_triangle = scale_triangle(triangles, objekt[3][0], objekt[3][1], objekt[3][2])                               #scale triangle
+
+            rotated_triangle = rotate_multiaxis(scaled_triangle, angle_x_axis=objekt[2][0], angle_y_axis = objekt[2][1], angle_z_axis=objekt[2][2])     #rotate the cube
 
             offseted_triangles2 = translate_triangle(rotated_triangle, x=objekt[1][0], y=objekt[1][1], z=objekt[1][2])                   #move cube to location in space
 
@@ -296,7 +308,7 @@ def draw():
 
                 complete_triangle = []
                 complete_triangle.append(screen_normalized_triangles)
-                complete_triangle.append(triangle_shade(offseted_triangles2, normal, sun_direction, sun_color, shadow_color))
+                complete_triangle.append(triangle_shade(offseted_triangles2, normal, sun_direction, sun_color, shadow_color, objekt[4]))
 
                 sum_z = (offseted_triangles2[0][2] + offseted_triangles2[1][2] + offseted_triangles2[2][2])/3
                 complete_triangle.append(sum_z)
